@@ -9,10 +9,11 @@ use std::path::PathBuf;
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 struct Cli {
+    /// path of file to import and decode
     #[arg(short, long)]
     input: PathBuf,
 
-    /// Export extension
+    /// path to export re-encoded file to
     #[arg(short, long)]
     output: String,
 }
