@@ -1,3 +1,4 @@
+use anyhow::Result;
 use clap::Parser;
 use image::codecs::tiff::TiffEncoder;
 use image::{ColorType, ImageEncoder};
@@ -16,7 +17,7 @@ struct Cli {
     output: String,
 }
 
-fn main() {
+fn main() -> Result<()> {
     let cli = Cli::parse();
 
     // Convert the RAW image to a decoded image using imagepipe
@@ -29,7 +30,7 @@ fn main() {
     };
 
     // Open a file for writing the PNG image
-    let output_file = match File::create(cli.output) {
+    let output_file = match File::create(&cli.output) {
         Ok(val) => val,
         Err(e) => {
             println!("Error: {}", e);
@@ -37,20 +38,32 @@ fn main() {
         }
     };
 
-    // Create a buffered writer for the output file
     let mut output_writer = BufWriter::new(output_file);
 
-    // match image::codecs::png::PngEncoder::new(&mut output_writer).write_image(
-    match TiffEncoder::new(&mut output_writer).write_image(
-        &decoded.data,
-        decoded.width as u32,
-        decoded.height as u32,
-        ColorType::Rgb8,
-    ) {
-        Ok(_) => {}
-        Err(e) => {
-            println!("Error: {}", e);
-            std::process::exit(1);
-        }
-    };
+    if cli.output.contains("tif") {
+        TiffEncoder::new(&mut output_writer).write_image(
+            &decoded.data,
+            decoded.width as u32,
+            decoded.height as u32,
+            ColorType::Rgb8,
+        )?;
+    } else if cli.output.contains("png") {
+        image::codecs::png::PngEncoder::new(&mut output_writer).write_image(
+            &decoded.data,
+            decoded.width as u32,
+            decoded.height as u32,
+            ColorType::Rgb8,
+        )?;
+    } else if cli.output.contains("jpeg") || cli.output.contains("jpg") {
+        image::codecs::jpeg::JpegEncoder::new(&mut output_writer).write_image(
+            &decoded.data,
+            decoded.width as u32,
+            decoded.height as u32,
+            ColorType::Rgb8,
+        )?;
+    } else {
+        panic!()
+    }
+
+    Ok(())
 }
